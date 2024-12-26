@@ -31,6 +31,12 @@ export function Header() {
             >
               <Link href="/import-registrants">Import</Link>
             </Button>
+            <Button
+              variant={isActive('/export') ? "secondary" : "ghost"}
+              asChild
+            >
+              <Link href="/export">Export</Link>
+            </Button>
           </nav>
           <div className="flex items-center">
             <ThemeToggle />
