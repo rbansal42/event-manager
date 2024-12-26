@@ -12,6 +12,7 @@ interface ImportResults {
   imported: number;
   skipped: number;
   errors: string[];
+  logs: string[];
 }
 
 export default function ImportRegistrants() {
@@ -116,6 +117,22 @@ export default function ImportRegistrants() {
                       <div className="space-y-2">
                         <p>Successfully imported: {results.imported} registrants</p>
                         <p>Skipped (duplicates): {results.skipped} registrants</p>
+                        <div className="mt-4">
+                          <p className="font-medium mb-2">Import Log:</p>
+                          <div className="bg-muted p-3 rounded-md max-h-60 overflow-y-auto">
+                            <ul className="space-y-1 text-sm">
+                              {results.logs.map((log, index) => (
+                                <li key={index} className={`${
+                                  log.includes('Successfully') ? 'text-green-600' :
+                                  log.includes('Skipped') ? 'text-yellow-600' :
+                                  'text-red-600'
+                                }`}>
+                                  {log}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
                         {results.errors.length > 0 && (
                           <>
                             <p className="font-medium">Errors:</p>

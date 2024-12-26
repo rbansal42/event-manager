@@ -17,6 +17,7 @@ interface ImportResults {
   imported: number;
   skipped: number;
   errors: string[];
+  logs: string[];
 }
 
 type ApiResponse = ImportResults | { error: string };
@@ -31,11 +32,12 @@ export default async function handler(
 
   try {
     await dbConnect();
-    const results = {
+    const results: ImportResults = {
       success: true,
       imported: 0,
       skipped: 0,
-      errors: [] as string[]
+      errors: [],
+      logs: []
     };
 
     // Create a readable stream from the request body
@@ -43,14 +45,17 @@ export default async function handler(
     bufferStream.push(req.body.csvData);
     bufferStream.push(null);
 
+    let rowNumber = 0;
+
     // Process the CSV stream
     const processStream = () => {
-      return new Promise((resolve) => {
+      return new Promise<ImportResults>((resolve) => {
         bufferStream
           .pipe(csv({
             mapValues: ({ header, value }) => value.trim()
           }))
           .on('data', async (row) => {
+            rowNumber++;
             try {
               // Validate required fields
               if (!row.fullName && !row['Full Name']) {
@@ -88,6 +93,7 @@ export default async function handler(
               const existingPhone = await Registrant.findOne({ phone: registrant.phone });
               if (existingPhone) {
                 results.skipped++;
+                results.logs.push(`Row ${rowNumber}: Skipped - Duplicate phone number for ${registrant.fullName} (${registrant.phone})`);
                 return;
               }
 
@@ -102,9 +108,12 @@ export default async function handler(
                 }
               });
               results.imported++;
+              results.logs.push(`Row ${rowNumber}: Successfully imported ${registrant.fullName} (${registrant.type}) from ${registrant.clubName}`);
             } catch (error) {
               if (error instanceof Error) {
-                results.errors.push(`Row error: ${error.message}`);
+                const errorMsg = `Row ${rowNumber}: Failed - ${error.message}`;
+                results.errors.push(errorMsg);
+                results.logs.push(errorMsg);
               }
             }
           })
