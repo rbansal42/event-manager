@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Geist } from 'next/font/google';
-import { Header } from '@/components/Header';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -135,7 +134,6 @@ export default function CheckIn() {
 
   return (
     <div className={geist.className}>
-      <Header />
       <main className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8 flex flex-col sm:flex-row gap-4">
