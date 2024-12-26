@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const RegistrantSchema = new mongoose.Schema({
   fullName: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  type: { type: [String], enum: ['Rotarian', 'Rotaractor', 'Interactor'], required: true },
+  type: { type: [String], enum: ['Rotarian', 'Rotaractor', 'Interactor', 'Guardian'], required: true },
   clubName: { type: String, required: true },
   clubDesignation: { type: String, required: true },
   registrationDate: { type: Date, default: Date.now },
