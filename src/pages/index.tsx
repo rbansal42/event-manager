@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react';
 import { Geist } from 'next/font/google';
 import { Header } from '@/components/Header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowUpDown, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const geist = Geist({ subsets: ['latin'] });
 
@@ -50,7 +54,16 @@ type DashboardData = {
   }>;
 };
 
+type SortConfig = {
+  key: string;
+  direction: 'asc' | 'desc';
+};
+
 const DashboardContent = ({ data, selectedDay }: { data: DashboardData, selectedDay?: string }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedType, setSelectedType] = useState<string>('all');
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'total', direction: 'desc' });
+
   const getStatsForDay = (stats: TypeStats | ClubStats) => {
     if (!selectedDay) return stats;
     return {
@@ -58,6 +71,45 @@ const DashboardContent = ({ data, selectedDay }: { data: DashboardData, selected
       checkedIn: stats.dailyStats[selectedDay as keyof typeof stats.dailyStats].checkedIn,
       percentage: stats.dailyStats[selectedDay as keyof typeof stats.dailyStats].percentage,
     };
+  };
+
+  // Get unique types from all clubs
+  const allTypes = Array.from(
+    new Set(
+      Object.values(data.byClub).flatMap(club => 
+        Object.keys(club.types)
+      )
+    )
+  ).sort();
+
+  // Filter and sort club data
+  const filteredAndSortedClubs = Object.entries(data.byClub)
+    .filter(([clubName, stats]) => {
+      const matchesSearch = clubName.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesType = selectedType === 'all' || Object.keys(stats.types).includes(selectedType);
+      return matchesSearch && matchesType;
+    })
+    .sort(([clubNameA, statsA], [clubNameB, statsB]) => {
+      const a = sortConfig.key === 'club' ? clubNameA : 
+               sortConfig.key === 'total' ? statsA.total :
+               sortConfig.key === 'checkedIn' ? getStatsForDay(statsA).checkedIn :
+               getStatsForDay(statsA).percentage;
+      
+      const b = sortConfig.key === 'club' ? clubNameB :
+               sortConfig.key === 'total' ? statsB.total :
+               sortConfig.key === 'checkedIn' ? getStatsForDay(statsB).checkedIn :
+               getStatsForDay(statsB).percentage;
+
+      return sortConfig.direction === 'asc' 
+        ? (a < b ? -1 : 1)
+        : (a > b ? -1 : 1);
+    });
+
+  const toggleSort = (key: string) => {
+    setSortConfig(current => ({
+      key,
+      direction: current.key === key && current.direction === 'desc' ? 'asc' : 'desc'
+    }));
   };
 
   return (
@@ -121,22 +173,83 @@ const DashboardContent = ({ data, selectedDay }: { data: DashboardData, selected
 
       <div className="mb-8">
         <h2 className="text-xl font-semibold mb-4">Registration by Club</h2>
-        <div className="bg-secondary rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left p-4 font-medium">Club</th>
-                  <th className="text-left p-4 font-medium">Total</th>
-                  <th className="text-left p-4 font-medium">Checked In</th>
-                  <th className="text-left p-4 font-medium">Progress</th>
-                  <th className="text-left p-4 font-medium">Types</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(data.byClub)
-                  .sort(([, a], [, b]) => b.total - a.total)
-                  .map(([club, stats]) => {
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search clubs..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+            <Select
+              value={selectedType}
+              onValueChange={setSelectedType}
+            >
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Filter by type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                {allTypes.map(type => (
+                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="bg-secondary rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left p-4 font-medium">
+                      <Button
+                        variant="ghost"
+                        onClick={() => toggleSort('club')}
+                        className="hover:bg-transparent"
+                      >
+                        Club
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </th>
+                    <th className="text-left p-4 font-medium">
+                      <Button
+                        variant="ghost"
+                        onClick={() => toggleSort('total')}
+                        className="hover:bg-transparent"
+                      >
+                        Total
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </th>
+                    <th className="text-left p-4 font-medium">
+                      <Button
+                        variant="ghost"
+                        onClick={() => toggleSort('checkedIn')}
+                        className="hover:bg-transparent"
+                      >
+                        Checked In
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </th>
+                    <th className="text-left p-4 font-medium">
+                      <Button
+                        variant="ghost"
+                        onClick={() => toggleSort('percentage')}
+                        className="hover:bg-transparent"
+                      >
+                        Progress
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </th>
+                    <th className="text-left p-4 font-medium">Types</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredAndSortedClubs.map(([club, stats]) => {
                     const displayStats = getStatsForDay(stats);
                     return (
                       <tr key={club} className="border-b border-border">
@@ -171,8 +284,9 @@ const DashboardContent = ({ data, selectedDay }: { data: DashboardData, selected
                       </tr>
                     );
                   })}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
