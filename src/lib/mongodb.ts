@@ -7,54 +7,67 @@ if (!MONGODB_URI) {
   throw new Error('Please add your Mongo URI to .env.local');
 }
 
-let isConnected = false;
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
 
 async function dbConnect() {
-  if (isConnected) {
-    console.log('Using existing database connection');
-    return;
+  if (cached.conn) {
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+      dbName: MONGODB_DATABASE,
+      autoCreate: true,
+      autoIndex: true,
+    };
+
+    cached.promise = mongoose.connect(MONGODB_URI as string, opts).then((mongoose) => {
+      console.log('Successfully connected to MongoDB.');
+      console.log(`Database: ${mongoose.connection.db.databaseName}`);
+      console.log(`Host: ${mongoose.connection.host}`);
+      console.log(`Port: ${mongoose.connection.port}`);
+      return mongoose;
+    });
   }
 
   try {
-    const db = await mongoose.connect(MONGODB_URI as string, {
-      dbName: MONGODB_DATABASE,
-      bufferCommands: false,
-      autoCreate: true,
-      autoIndex: true,
-    });
-
-    isConnected = !!db.connections[0].readyState;
-
-    if (isConnected) {
-      console.log('Successfully connected to MongoDB.');
-      console.log(`Database: ${db.connections[0]?.db?.databaseName || MONGODB_DATABASE}`);
-      console.log(`Host: ${db.connections[0].host}`);
-      console.log(`Port: ${db.connections[0].port}`);
-    }
-
-  } catch (error) {
-    console.error('MongoDB connection error:', error);
-    isConnected = false;
-    throw error;
+    cached.conn = await cached.promise;
+    return cached.conn;
+  } catch (e) {
+    cached.promise = null;
+    throw e;
   }
 }
 
+// Handle connection events
 mongoose.connection.on('connected', () => {
   console.log('MongoDB connected successfully');
 });
 
 mongoose.connection.on('error', (err) => {
   console.error('MongoDB connection error:', err);
-  isConnected = false;
+  cached.promise = null;
+  cached.conn = null;
 });
 
 mongoose.connection.on('disconnected', () => {
   console.log('MongoDB disconnected');
-  isConnected = false;
+  cached.promise = null;
+  cached.conn = null;
 });
 
+// Graceful shutdown
 process.on('SIGINT', async () => {
-  await mongoose.connection.close();
+  if (cached.conn) {
+    await cached.conn.connection.close();
+    cached.conn = null;
+    cached.promise = null;
+  }
   process.exit(0);
 });
 
