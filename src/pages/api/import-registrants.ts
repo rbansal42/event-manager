@@ -24,7 +24,7 @@ export default async function handler(
       phone: row.phone || row.Phone || '',
       type: row.type || row['Type'] || '',
       clubName: row.clubName || row['Club Name'] || '',
-      clubDesignation: row.clubDesignation || row['Club Designation'] || '',
+      clubDesignation: row.clubDesignation || row['Club Designation'] || undefined,
       registrationDate: new Date(),
       checkedIn: false
     }));
