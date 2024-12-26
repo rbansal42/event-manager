@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Geist } from 'next/font/google';
-import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -86,7 +85,6 @@ export default function ImportRegistrants() {
 
   return (
     <div className={geist.className}>
-      <Header />
       <main className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Card>

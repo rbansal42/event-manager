@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Geist } from 'next/font/google';
-import { Header } from '@/components/Header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -354,7 +353,6 @@ export default function Home() {
 
   return (
     <div className={geist.className}>
-      <Header />
       <main className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Tabs defaultValue="all" className="mb-8">
