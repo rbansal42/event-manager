@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronUpDown, ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 
 const geist = Geist({ subsets: ['latin'] });
 
@@ -95,7 +95,7 @@ export default function CheckIn() {
   };
 
   const getSortIcon = (field: SortField) => {
-    if (sortConfig.field !== field) return <ChevronUpDown className="h-4 w-4" />;
+    if (sortConfig.field !== field) return <ChevronsUpDown className="h-4 w-4" />;
     return sortConfig.direction === 'asc' ? 
       <ChevronUp className="h-4 w-4" /> : 
       <ChevronDown className="h-4 w-4" />;
