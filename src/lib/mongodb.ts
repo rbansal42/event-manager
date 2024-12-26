@@ -16,7 +16,7 @@ async function dbConnect() {
   }
 
   try {
-    const db = await mongoose.connect(MONGODB_URI, {
+    const db = await mongoose.connect(MONGODB_URI as string, {
       dbName: MONGODB_DATABASE,
       bufferCommands: false,
       autoCreate: true,
