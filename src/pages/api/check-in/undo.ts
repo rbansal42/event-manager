@@ -17,17 +17,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ message: 'Registrant not found' });
     }
 
-    if (registrant.checkedIn) {
-      return res.status(400).json({ message: 'Registrant already checked in' });
+    if (!registrant.checkedIn) {
+      return res.status(400).json({ message: 'Registrant is not checked in' });
     }
 
-    registrant.checkedIn = true;
-    registrant.checkInTime = new Date();
+    registrant.checkedIn = false;
+    registrant.checkInTime = undefined;
     await registrant.save();
 
     return res.status(200).json(registrant);
   } catch (error) {
-    console.error('Check-in error:', error);
+    console.error('Undo check-in error:', error);
     return res.status(500).json({ message: 'Server error' });
   }
 } 

@@ -4,6 +4,7 @@ const RegistrantSchema = new mongoose.Schema({
   fullName: { type: String, required: true },
   email: { type: String, required: false },
   phone: { type: String, required: true },
+  rotaryID: { type: String, required: false },
   type: { type: String, enum: ['Rotarian', 'Rotaractor', 'Interactor', 'Guardian'], required: true },
   clubName: { type: String, required: true },
   clubDesignation: { type: String, required: false },

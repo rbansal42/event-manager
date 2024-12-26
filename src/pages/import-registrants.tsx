@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
+import { Geist } from 'next/font/google';
 import Papa from 'papaparse';
+import { Header } from '@/components/Header';
+
+const geist = Geist({ subsets: ['latin'] });
 
 export default function ImportRegistrants() {
   const [file, setFile] = useState<File | null>(null);
@@ -52,66 +56,69 @@ export default function ImportRegistrants() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md mx-auto">
-        <div className="text-center">
-          <h2 className="text-3xl font-extrabold text-gray-900">
-            Import Registrants
-          </h2>
-        </div>
+    <div className={geist.className}>
+      <Header />
+      <main className="min-h-screen bg-background">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="bg-secondary rounded-lg p-6 shadow-sm">
+            <h2 className="text-2xl font-semibold mb-6">
+              Import Registrants
+            </h2>
 
-        <div className="mt-8 bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">CSV Format Requirements</h3>
-          <p className="text-sm text-gray-600 mb-2">Your CSV file should have the following columns:</p>
-          <ul className="list-disc list-inside text-sm text-gray-600 mb-4">
-            <li>Full Name (required)</li>
-            <li>Email (optional)</li>
-            <li>Phone (required)</li>
-            <li>Type (required)</li>
-            <li>Club Name (required)</li>
-            <li>Club Designation (required)</li>
-          </ul>
-          <div className="bg-gray-500 p-3 rounded text-xs font-mono mb-4">
-            Example:<br />
-            Full Name,Email,Phone,Type,Club Name,Club Designation<br />
-            John Doe,,1234567890,Rotarian,RC Downtown,President
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="file-upload" className="sr-only">
-                Choose CSV file
-              </label>
-              <input
-                id="file-upload"
-                name="file-upload"
-                type="file"
-                accept=".csv"
-                onChange={handleFileChange}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-              />
+            <div className="mb-8">
+              <h3 className="text-lg font-medium mb-4">CSV Format Requirements</h3>
+              <p className="text-muted-foreground mb-2">Your CSV file should have the following columns:</p>
+              <ul className="list-disc list-inside text-muted-foreground space-y-1 mb-4">
+                <li>Full Name (required)</li>
+                <li>Email (optional)</li>
+                <li>Phone (required)</li>
+                <li>Type (required)</li>
+                <li>Club Name (required)</li>
+                <li>Club Designation (required)</li>
+              </ul>
+              <div className="bg-accent p-3 rounded text-xs font-mono mb-4 text-accent-foreground">
+                Example:<br />
+                Full Name,Email,Phone,Type,Club Name,Club Designation<br />
+                John Doe,,1234567890,Rotarian,RC Downtown,President
+              </div>
             </div>
-          </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={loading || !file}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-gray-400"
-            >
-              {loading ? 'Importing...' : 'Import'}
-            </button>
-          </div>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label htmlFor="file-upload" className="block text-sm font-medium mb-2">
+                  Choose CSV file
+                </label>
+                <input
+                  id="file-upload"
+                  name="file-upload"
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileChange}
+                  className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-sm"
+                />
+              </div>
 
-          {message && (
-            <div className={`mt-4 text-sm ${message.includes('Error') ? 'text-red-600' : 'text-green-600'}`}>
-              {message}
-            </div>
-          )}
-        </form>
-      </div>
+              <button
+                type="submit"
+                disabled={loading || !file}
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:bg-primary/50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Importing...' : 'Import'}
+              </button>
+
+              {message && (
+                <div className={`mt-4 p-4 rounded-md text-sm ${
+                  message.includes('Error')
+                    ? 'bg-error-muted text-error border border-error'
+                    : 'bg-success-muted text-success border border-success'
+                }`}>
+                  {message}
+                </div>
+              )}
+            </form>
+          </div>
+        </div>
+      </main>
     </div>
   );
 } 
