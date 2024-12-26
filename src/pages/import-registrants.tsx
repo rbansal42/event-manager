@@ -4,6 +4,8 @@ import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Loader2 } from 'lucide-react';
 
 const geist = Geist({ subsets: ['latin'] });
 
@@ -20,12 +22,15 @@ export default function ImportRegistrants() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<ImportResults | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (selectedFile && selectedFile.type === 'text/csv') {
       setFile(selectedFile);
       setError(null);
+      setResults(null);
+      setProgress(0);
     } else {
       setFile(null);
       setError('Please select a valid CSV file');
@@ -41,8 +46,17 @@ export default function ImportRegistrants() {
     setLoading(true);
     setError(null);
     setResults(null);
+    setProgress(0);
 
     try {
+      // Start progress animation
+      const progressInterval = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= 90) return prev;
+          return prev + 10;
+        });
+      }, 500);
+
       const csvData = await file.text();
       
       const response = await fetch('/api/import-registrants', {
@@ -52,6 +66,9 @@ export default function ImportRegistrants() {
         },
         body: JSON.stringify({ csvData }),
       });
+
+      clearInterval(progressInterval);
+      setProgress(100);
 
       const result = await response.json();
 
@@ -98,10 +115,27 @@ export default function ImportRegistrants() {
                   <Button
                     onClick={handleImport}
                     disabled={!file || loading}
+                    className="min-w-[100px]"
                   >
-                    {loading ? 'Importing...' : 'Import'}
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Importing
+                      </>
+                    ) : (
+                      'Import'
+                    )}
                   </Button>
                 </div>
+
+                {loading && (
+                  <div className="space-y-2">
+                    <Progress value={progress} className="w-full" />
+                    <p className="text-sm text-muted-foreground">
+                      Processing your file, please wait...
+                    </p>
+                  </div>
+                )}
 
                 {error && (
                   <Alert variant="destructive">
@@ -115,8 +149,16 @@ export default function ImportRegistrants() {
                     <AlertTitle>Import Results</AlertTitle>
                     <AlertDescription>
                       <div className="space-y-2">
-                        <p>Successfully imported: {results.imported} registrants</p>
-                        <p>Skipped (duplicates): {results.skipped} registrants</p>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium">Successfully Imported</p>
+                            <p className="text-2xl font-bold text-green-600">{results.imported}</p>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium">Skipped (Duplicates)</p>
+                            <p className="text-2xl font-bold text-yellow-600">{results.skipped}</p>
+                          </div>
+                        </div>
                         <div className="mt-4">
                           <p className="font-medium mb-2">Import Log:</p>
                           <div className="bg-muted p-3 rounded-md max-h-60 overflow-y-auto">
@@ -135,10 +177,10 @@ export default function ImportRegistrants() {
                         </div>
                         {results.errors.length > 0 && (
                           <>
-                            <p className="font-medium">Errors:</p>
+                            <p className="font-medium mt-4">Errors:</p>
                             <ul className="list-disc pl-4 space-y-1">
                               {results.errors.map((error, index) => (
-                                <li key={index} className="text-sm">{error}</li>
+                                <li key={index} className="text-sm text-red-600">{error}</li>
                               ))}
                             </ul>
                           </>

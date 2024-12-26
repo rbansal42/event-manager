@@ -46,6 +46,7 @@ export default async function handler(
     bufferStream.push(null);
 
     let rowNumber = 0;
+    let pendingOperations: Promise<void>[] = [];
 
     // Process the CSV stream
     const processStream = () => {
@@ -56,68 +57,73 @@ export default async function handler(
           }))
           .on('data', async (row) => {
             rowNumber++;
-            try {
-              // Validate required fields
-              if (!row.fullName && !row['Full Name']) {
-                throw new Error('Full name is required');
-              }
-              if (!row.phone && !row['Phone']) {
-                throw new Error('Phone number is required');
-              }
-              if (!row.type && !row['Type']) {
-                throw new Error('Type is required');
-              }
-              if (!row.clubName && !row['Club Name']) {
-                throw new Error('Club name is required');
-              }
-
-              const registrant: ImportRegistrant = {
-                fullName: row.fullName || row['Full Name'],
-                phone: row.phone || row['Phone'],
-                type: row.type || row['Type'],
-                clubName: row.clubName || row['Club Name'],
-              };
-
-              // Handle optional fields
-              const clubDesignation = row.clubDesignation || row['Club Designation'];
-              if (clubDesignation) {
-                registrant.clubDesignation = clubDesignation;
-              }
-
-              // Validate type enum
-              if (!['Rotarian', 'Rotaractor', 'Interactor', 'Guardian'].includes(registrant.type)) {
-                throw new Error(`Invalid type: ${registrant.type}`);
-              }
-
-              // Check for duplicate phone
-              const existingPhone = await Registrant.findOne({ phone: registrant.phone });
-              if (existingPhone) {
-                results.skipped++;
-                results.logs.push(`Row ${rowNumber}: Skipped - Duplicate phone number for ${registrant.fullName} (${registrant.phone})`);
-                return;
-              }
-
-              // Create new registrant
-              await Registrant.create({
-                ...registrant,
-                checkedIn: false,
-                dailyCheckIns: {
-                  day1: { checkedIn: false },
-                  day2: { checkedIn: false },
-                  day3: { checkedIn: false }
+            const operation = async () => {
+              try {
+                // Validate required fields
+                if (!row.fullName && !row['Full Name']) {
+                  throw new Error('Full name is required');
                 }
-              });
-              results.imported++;
-              results.logs.push(`Row ${rowNumber}: Successfully imported ${registrant.fullName} (${registrant.type}) from ${registrant.clubName}`);
-            } catch (error) {
-              if (error instanceof Error) {
-                const errorMsg = `Row ${rowNumber}: Failed - ${error.message}`;
-                results.errors.push(errorMsg);
-                results.logs.push(errorMsg);
+                if (!row.phone && !row['Phone']) {
+                  throw new Error('Phone number is required');
+                }
+                if (!row.type && !row['Type']) {
+                  throw new Error('Type is required');
+                }
+                if (!row.clubName && !row['Club Name']) {
+                  throw new Error('Club name is required');
+                }
+
+                const registrant: ImportRegistrant = {
+                  fullName: row.fullName || row['Full Name'],
+                  phone: row.phone || row['Phone'],
+                  type: row.type || row['Type'],
+                  clubName: row.clubName || row['Club Name'],
+                };
+
+                // Handle optional fields
+                const clubDesignation = row.clubDesignation || row['Club Designation'];
+                if (clubDesignation) {
+                  registrant.clubDesignation = clubDesignation;
+                }
+
+                // Validate type enum
+                if (!['Rotarian', 'Rotaractor', 'Interactor', 'Guardian'].includes(registrant.type)) {
+                  throw new Error(`Invalid type: ${registrant.type}`);
+                }
+
+                // Check for duplicate phone
+                const existingPhone = await Registrant.findOne({ phone: registrant.phone });
+                if (existingPhone) {
+                  results.skipped++;
+                  results.logs.push(`Row ${rowNumber}: Skipped - Duplicate phone number for ${registrant.fullName} (${registrant.phone})`);
+                  return;
+                }
+
+                // Create new registrant
+                await Registrant.create({
+                  ...registrant,
+                  checkedIn: false,
+                  dailyCheckIns: {
+                    day1: { checkedIn: false },
+                    day2: { checkedIn: false },
+                    day3: { checkedIn: false }
+                  }
+                });
+                results.imported++;
+                results.logs.push(`Row ${rowNumber}: Successfully imported ${registrant.fullName} (${registrant.type}) from ${registrant.clubName}`);
+              } catch (error) {
+                if (error instanceof Error) {
+                  const errorMsg = `Row ${rowNumber}: Failed - ${error.message}`;
+                  results.errors.push(errorMsg);
+                  results.logs.push(errorMsg);
+                }
               }
-            }
+            };
+            pendingOperations.push(operation());
           })
-          .on('end', () => {
+          .on('end', async () => {
+            // Wait for all pending operations to complete
+            await Promise.all(pendingOperations);
             resolve(results);
           });
       });
