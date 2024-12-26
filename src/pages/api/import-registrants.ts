@@ -46,14 +46,14 @@ export default async function handler(
     bufferStream.push(null);
 
     let rowNumber = 0;
-    let pendingOperations: Promise<void>[] = [];
+    const pendingOperations: Promise<void>[] = [];
 
     // Process the CSV stream
     const processStream = () => {
       return new Promise<ImportResults>((resolve) => {
         bufferStream
           .pipe(csv({
-            mapValues: ({ header, value }) => value.trim()
+            mapValues: ({ value }) => value.trim()
           }))
           .on('data', async (row) => {
             rowNumber++;

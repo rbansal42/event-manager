@@ -1,23 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import dbConnect from '@/lib/mongodb';
 import Registrant from '@/models/Registrant';
-import type { Document, Types } from 'mongoose';
 
 interface DailyCheckIn {
   checkedIn: boolean;
   checkInTime?: Date;
-}
-
-interface RegistrantDocument extends Document {
-  fullName: string;
-  phone: string;
-  type: string;
-  clubName: string;
-  dailyCheckIns: {
-    day1: DailyCheckIn;
-    day2: DailyCheckIn;
-    day3: DailyCheckIn;
-  };
 }
 
 interface LeanRegistrant {
