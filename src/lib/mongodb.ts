@@ -6,6 +6,7 @@ type MongooseCache = {
 }
 
 declare global {
+  // eslint-disable-next-line no-var
   var mongoose: MongooseCache | undefined;
 }
 
@@ -34,9 +35,11 @@ async function dbConnect() {
 
     cached.promise = mongoose.connect(MONGODB_URI as string, opts).then((mongoose) => {
       console.log('Successfully connected to MongoDB.');
-      console.log(`Database: ${mongoose.connection.db.databaseName}`);
-      console.log(`Host: ${mongoose.connection.host}`);
-      console.log(`Port: ${mongoose.connection.port}`);
+      if (mongoose.connection.db) {
+        console.log(`Database: ${mongoose.connection.db.databaseName}`);
+        console.log(`Host: ${mongoose.connection.host}`);
+        console.log(`Port: ${mongoose.connection.port}`);
+      }
       return mongoose;
     });
   }
