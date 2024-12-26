@@ -64,17 +64,17 @@ export default function ImportRegistrants() {
           <h3 className="text-lg font-medium text-gray-900 mb-4">CSV Format Requirements</h3>
           <p className="text-sm text-gray-600 mb-2">Your CSV file should have the following columns:</p>
           <ul className="list-disc list-inside text-sm text-gray-600 mb-4">
-            <li>Full Name</li>
-            <li>Email</li>
-            <li>Phone</li>
-            <li>Type</li>
-            <li>Club Name</li>
-            <li>Club Designation</li>
+            <li>Full Name (required)</li>
+            <li>Email (optional)</li>
+            <li>Phone (required)</li>
+            <li>Type (required)</li>
+            <li>Club Name (required)</li>
+            <li>Club Designation (required)</li>
           </ul>
           <div className="bg-gray-500 p-3 rounded text-xs font-mono mb-4">
             Example:<br />
             Full Name,Email,Phone,Type,Club Name,Club Designation<br />
-            John Doe,john@example.com,1234567890,Rotarian,RC Downtown,President
+            John Doe,,1234567890,Rotarian,RC Downtown,President
           </div>
         </div>
 

@@ -22,7 +22,7 @@ export default async function handler(
     // Transform the data to match your schema
     const registrants = data.map(row => ({
       fullName: row.fullName || row['Full Name'] || '',
-      email: row.email || row.Email || '',
+      email: row.email || row.Email || null,
       phone: row.phone || row.Phone || '',
       type: row.type || row['Type'] || '',
       clubName: row.clubName || row['Club Name'] || '',
