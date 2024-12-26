@@ -1,14 +1,14 @@
-import { useTheme } from './ThemeProvider';
+import { useTheme } from 'next-themes';
 import { Button } from './ui/button';
 
 export function ThemeToggle() {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
 
   return (
     <Button
       variant="ghost"
       size="icon"
-      onClick={toggleTheme}
+      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
       className="text-muted-foreground hover:text-foreground"
     >
       {theme === 'dark' ? (
