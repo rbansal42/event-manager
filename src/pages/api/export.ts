@@ -3,6 +3,14 @@ import dbConnect from '@/lib/mongodb';
 import * as XLSX from 'xlsx';
 import Registrant from '@/models/Registrant';
 
+interface ClubAttendanceData {
+  Club: string;
+  'Day 1': number;
+  'Day 2': number;
+  'Day 3': number;
+  'Total Unique': number;
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method not allowed' });
@@ -50,7 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     // Club-wise attendance sheet
-    const clubData: Record<string, any> = {};
+    const clubData: Record<string, ClubAttendanceData> = {};
     registrants.forEach((reg) => {
       if (!clubData[reg.clubName]) {
         clubData[reg.clubName] = {
