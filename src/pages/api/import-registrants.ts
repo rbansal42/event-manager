@@ -21,11 +21,12 @@ export default async function handler(
 
     // Transform the data to match your schema
     const registrants = data.map(row => ({
-      firstName: row.firstName || row['First Name'] || '',
-      lastName: row.lastName || row['Last Name'] || '',
+      fullName: row.fullName || row['Full Name'] || '',
       email: row.email || row.Email || '',
       phone: row.phone || row.Phone || '',
-      rotaryClub: row.rotaryClub || row['Rotary Club'] || '',
+      type: row.type || row['Type'] || '',
+      clubName: row.clubName || row['Club Name'] || '',
+      clubDesignation: row.clubDesignation || row['Club Designation'] || '',
       createdAt: new Date(),
       updatedAt: new Date()
     }));
