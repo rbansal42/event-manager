@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { connectToDatabase } from '@/lib/mongodb';
+import dbConnect from '@/lib/mongodb';
 import * as XLSX from 'xlsx';
-import { Registrant } from '@/models/Registrant';
+import Registrant from '@/models/Registrant';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -9,21 +9,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { db } = await connectToDatabase();
-    const registrants = await db.collection('registrants').find({}).toArray();
+    await dbConnect();
+    // Use Mongoose model instead of direct MongoDB access
+    const registrants = await Registrant.find({}).lean();
 
     // Create a new workbook
     const workbook = XLSX.utils.book_new();
 
     // Sheet 1: All registrants data with check-in details
-    const registrantsData = registrants.map((reg: any) => ({
-      Name: reg.name,
-      Email: reg.email,
+    const registrantsData = registrants.map((reg) => ({
+      Name: reg.fullName,
+      Email: reg.email || '',
       Phone: reg.phone,
-      Club: reg.club,
-      'Check-in Day 1': reg.checkInDay1 ? 'Yes' : 'No',
-      'Check-in Day 2': reg.checkInDay2 ? 'Yes' : 'No',
-      'Check-in Day 3': reg.checkInDay3 ? 'Yes' : 'No',
+      Type: reg.type,
+      Club: reg.clubName,
+      'Club Designation': reg.clubDesignation || '',
+      'Check-in Day 1': reg.dailyCheckIns?.day1?.checkedIn ? 'Yes' : 'No',
+      'Check-in Day 2': reg.dailyCheckIns?.day2?.checkedIn ? 'Yes' : 'No',
+      'Check-in Day 3': reg.dailyCheckIns?.day3?.checkedIn ? 'Yes' : 'No',
     }));
     const registrantsSheet = XLSX.utils.json_to_sheet(registrantsData);
     XLSX.utils.book_append_sheet(workbook, registrantsSheet, 'All Registrants');
@@ -32,35 +35,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const days = [1, 2, 3];
     days.forEach((day) => {
       const dayData = registrants
-        .filter((reg: any) => reg[`checkInDay${day}`])
-        .map((reg: any) => ({
-          Name: reg.name,
-          Email: reg.email,
+        .filter((reg) => reg.dailyCheckIns?.[`day${day}`]?.checkedIn)
+        .map((reg) => ({
+          Name: reg.fullName,
+          Email: reg.email || '',
           Phone: reg.phone,
-          Club: reg.club,
-          'Check-in Time': reg[`checkInDay${day}Time`] || '',
+          Type: reg.type,
+          Club: reg.clubName,
+          'Club Designation': reg.clubDesignation || '',
+          'Check-in Time': reg.dailyCheckIns?.[`day${day}`]?.checkInTime || '',
         }));
       const daySheet = XLSX.utils.json_to_sheet(dayData);
       XLSX.utils.book_append_sheet(workbook, daySheet, `Day ${day} Check-ins`);
     });
 
     // Club-wise attendance sheet
-    const clubData: any = {};
-    registrants.forEach((reg: any) => {
-      if (!clubData[reg.club]) {
-        clubData[reg.club] = {
-          Club: reg.club,
+    const clubData: Record<string, any> = {};
+    registrants.forEach((reg) => {
+      if (!clubData[reg.clubName]) {
+        clubData[reg.clubName] = {
+          Club: reg.clubName,
           'Day 1': 0,
           'Day 2': 0,
           'Day 3': 0,
           'Total Unique': 0,
         };
       }
-      if (reg.checkInDay1) clubData[reg.club]['Day 1']++;
-      if (reg.checkInDay2) clubData[reg.club]['Day 2']++;
-      if (reg.checkInDay3) clubData[reg.club]['Day 3']++;
-      if (reg.checkInDay1 || reg.checkInDay2 || reg.checkInDay3) {
-        clubData[reg.club]['Total Unique']++;
+      if (reg.dailyCheckIns?.day1?.checkedIn) clubData[reg.clubName]['Day 1']++;
+      if (reg.dailyCheckIns?.day2?.checkedIn) clubData[reg.clubName]['Day 2']++;
+      if (reg.dailyCheckIns?.day3?.checkedIn) clubData[reg.clubName]['Day 3']++;
+      if (reg.dailyCheckIns?.day1?.checkedIn || 
+          reg.dailyCheckIns?.day2?.checkedIn || 
+          reg.dailyCheckIns?.day3?.checkedIn) {
+        clubData[reg.clubName]['Total Unique']++;
       }
     });
 
