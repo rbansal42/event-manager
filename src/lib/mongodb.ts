@@ -1,32 +1,45 @@
-import { MongoClient } from 'mongodb';
-
-declare global {
-  var _mongoClientPromise: Promise<MongoClient>;
-}
+import mongoose from 'mongoose';
 
 if (!process.env.MONGODB_URI) {
   throw new Error('Please add your Mongo URI to .env.local');
 }
 
-const uri = process.env.MONGODB_URI;
-const options = {};
+const MONGODB_URI = process.env.MONGODB_URI;
 
-let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
-
-if (process.env.NODE_ENV === 'development') {
-  if (!global._mongoClientPromise) {
-    client = new MongoClient(uri, options);
-    global._mongoClientPromise = client.connect();
-  }
-  clientPromise = global._mongoClientPromise;
-} else {
-  client = new MongoClient(uri, options);
-  clientPromise = client.connect();
+declare global {
+  var mongoose: {
+    conn: null | typeof mongoose;
+    promise: null | Promise<typeof mongoose>;
+  };
 }
 
-export async function connectToDatabase() {
-  const client = await clientPromise;
-  const db = client.db(process.env.MONGODB_DATABASE);
-  return { db, client };
-} 
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
+async function dbConnect() {
+  if (cached.conn) {
+    return cached.conn;
+  }
+
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+    };
+
+    cached.promise = mongoose.connect(MONGODB_URI, opts);
+  }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    throw e;
+  }
+
+  return cached.conn;
+}
+
+export default dbConnect; 
