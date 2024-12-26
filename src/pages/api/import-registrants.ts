@@ -20,7 +20,8 @@ export default async function handler(
 
     const registrants = data.map(row => ({
       fullName: row.fullName || row['Full Name'] || '',
-      email: row.email || row.Email || '',
+      email: row.email || row.Email || undefined,
+      phone: row.phone || row.Phone || '',
       type: row.type || row['Type'] || '',
       clubName: row.clubName || row['Club Name'] || '',
       clubDesignation: row.clubDesignation || row['Club Designation'] || '',
