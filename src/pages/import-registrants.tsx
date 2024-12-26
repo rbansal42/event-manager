@@ -1,55 +1,66 @@
 import { useState } from 'react';
-import { useRouter } from 'next/router';
 import { Geist } from 'next/font/google';
-import Papa from 'papaparse';
 import { Header } from '@/components/Header';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 
 const geist = Geist({ subsets: ['latin'] });
+
+interface ImportResults {
+  success: boolean;
+  imported: number;
+  skipped: number;
+  errors: string[];
+}
 
 export default function ImportRegistrants() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const router = useRouter();
+  const [results, setResults] = useState<ImportResults | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFile(e.target.files[0]);
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    if (selectedFile && selectedFile.type === 'text/csv') {
+      setFile(selectedFile);
+      setError(null);
+    } else {
+      setFile(null);
+      setError('Please select a valid CSV file');
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleImport = async () => {
     if (!file) {
-      setMessage('Please select a file');
+      setError('Please select a file first');
       return;
     }
 
     setLoading(true);
-    setMessage('');
+    setError(null);
+    setResults(null);
 
     try {
-      const text = await file.text();
-      const result = Papa.parse(text, { header: true });
+      const csvData = await file.text();
       
       const response = await fetch('/api/import-registrants', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ data: result.data }),
+        body: JSON.stringify({ csvData }),
       });
 
-      const data = await response.json();
-      
-      if (response.ok) {
-        setMessage(`Successfully imported ${data.count} registrants`);
-      } else {
-        setMessage(`Error: ${data.error}`);
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to import registrants');
       }
-    } catch (error) {
-      setMessage('Error processing file');
-      console.error(error);
+
+      setResults(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred during import');
     } finally {
       setLoading(false);
     }
@@ -59,64 +70,69 @@ export default function ImportRegistrants() {
     <div className={geist.className}>
       <Header />
       <main className="min-h-screen bg-background">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="bg-secondary rounded-lg p-6 shadow-sm">
-            <h2 className="text-2xl font-semibold mb-6">
-              Import Registrants
-            </h2>
-
-            <div className="mb-8">
-              <h3 className="text-lg font-medium mb-4">CSV Format Requirements</h3>
-              <p className="text-muted-foreground mb-2">Your CSV file should have the following columns:</p>
-              <ul className="list-disc list-inside text-muted-foreground space-y-1 mb-4">
-                <li>Full Name (required)</li>
-                <li>Email (optional)</li>
-                <li>Phone (required)</li>
-                <li>Type (required)</li>
-                <li>Club Name (required)</li>
-                <li>Club Designation (required)</li>
-              </ul>
-              <div className="bg-accent p-3 rounded text-xs font-mono mb-4 text-accent-foreground">
-                Example:<br />
-                Full Name,Email,Phone,Type,Club Name,Club Designation<br />
-                John Doe,,1234567890,Rotarian,RC Downtown,President
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label htmlFor="file-upload" className="block text-sm font-medium mb-2">
-                  Choose CSV file
-                </label>
-                <input
-                  id="file-upload"
-                  name="file-upload"
-                  type="file"
-                  accept=".csv"
-                  onChange={handleFileChange}
-                  className="w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-sm"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading || !file}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring disabled:bg-primary/50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Importing...' : 'Import'}
-              </button>
-
-              {message && (
-                <div className={`mt-4 p-4 rounded-md text-sm ${
-                  message.includes('Error')
-                    ? 'bg-error-muted text-error border border-error'
-                    : 'bg-success-muted text-success border border-success'
-                }`}>
-                  {message}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Import Registrants</CardTitle>
+              <CardDescription>
+                Upload a CSV file containing registrant information. Required fields: Full Name, 
+                Phone, Type (Rotarian/Rotaractor/Interactor/Guardian), and Club Name. 
+                Optional fields: Club Designation.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileChange}
+                    className="block w-full text-sm text-muted-foreground
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-md file:border-0
+                      file:text-sm file:font-medium
+                      file:bg-primary file:text-primary-foreground
+                      hover:file:bg-primary/90"
+                  />
+                  <Button
+                    onClick={handleImport}
+                    disabled={!file || loading}
+                  >
+                    {loading ? 'Importing...' : 'Import'}
+                  </Button>
                 </div>
-              )}
-            </form>
-          </div>
+
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
+
+                {results && (
+                  <Alert variant={results.errors.length > 0 ? 'warning' : 'default'}>
+                    <AlertTitle>Import Results</AlertTitle>
+                    <AlertDescription>
+                      <div className="space-y-2">
+                        <p>Successfully imported: {results.imported} registrants</p>
+                        <p>Skipped (duplicates): {results.skipped} registrants</p>
+                        {results.errors.length > 0 && (
+                          <>
+                            <p className="font-medium">Errors:</p>
+                            <ul className="list-disc pl-4 space-y-1">
+                              {results.errors.map((error, index) => (
+                                <li key={index} className="text-sm">{error}</li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>

@@ -1,16 +1,48 @@
 import mongoose from 'mongoose';
 
-const RegistrantSchema = new mongoose.Schema({
-  fullName: { type: String, required: true },
-  email: { type: String, required: false },
-  phone: { type: String, required: true },
-  rotaryID: { type: String, required: false },
-  type: { type: String, enum: ['Rotarian', 'Rotaractor', 'Interactor', 'Guardian'], required: true },
-  clubName: { type: String, required: true },
-  clubDesignation: { type: String, required: false },
-  registrationDate: { type: Date, default: Date.now },
-  checkedIn: { type: Boolean, default: false },
-  checkInTime: { type: Date }
+const registrantSchema = new mongoose.Schema({
+  fullName: {
+    type: String,
+    required: true,
+  },
+  phone: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  type: {
+    type: String,
+    required: true,
+    enum: ['Rotarian', 'Rotaractor', 'Interactor', 'Guardian'],
+  },
+  clubName: {
+    type: String,
+    required: true,
+  },
+  checkedIn: {
+    type: Boolean,
+    default: false,
+  },
+  checkInTime: {
+    type: Date,
+  },
+  // Add daily check-in tracking
+  dailyCheckIns: {
+    day1: {
+      checkedIn: { type: Boolean, default: false },
+      checkInTime: { type: Date },
+    },
+    day2: {
+      checkedIn: { type: Boolean, default: false },
+      checkInTime: { type: Date },
+    },
+    day3: {
+      checkedIn: { type: Boolean, default: false },
+      checkInTime: { type: Date },
+    },
+  },
+}, {
+  timestamps: true,
 });
 
-export default mongoose.models.Registrant || mongoose.model('Registrant', RegistrantSchema); 
+export default mongoose.models.Registrant || mongoose.model('Registrant', registrantSchema); 

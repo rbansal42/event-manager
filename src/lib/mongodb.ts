@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/';
+const MONGODB_URI = process.env.MONGODB_URI
 const MONGODB_DATABASE = process.env.MONGODB_DATABASE || 'ryla2024';
 
 if (!MONGODB_URI) {
@@ -16,7 +16,8 @@ async function dbConnect() {
   }
 
   try {
-    const db = await mongoose.connect(MONGODB_URI + MONGODB_DATABASE, {
+    const db = await mongoose.connect(MONGODB_URI, {
+      dbName: MONGODB_DATABASE,
       bufferCommands: false,
       autoCreate: true,
       autoIndex: true,
