@@ -1,5 +1,14 @@
 import mongoose from 'mongoose';
 
+type MongooseCache = {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+}
+
+declare global {
+  var mongoose: MongooseCache | undefined;
+}
+
 const MONGODB_URI = process.env.MONGODB_URI
 const MONGODB_DATABASE = process.env.MONGODB_DATABASE || 'ryla2024';
 
@@ -7,11 +16,8 @@ if (!MONGODB_URI) {
   throw new Error('Please add your Mongo URI to .env.local');
 }
 
-let cached = global.mongoose;
-
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
-}
+const cached: MongooseCache = global.mongoose || { conn: null, promise: null };
+global.mongoose = cached;
 
 async function dbConnect() {
   if (cached.conn) {
