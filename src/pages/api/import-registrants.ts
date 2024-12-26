@@ -1,5 +1,6 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { connectToDatabase } from '@/lib/mongodb';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import dbConnect from '@/lib/mongodb';
+import Registrant from '@/models/Registrant';
 
 export default async function handler(
   req: NextApiRequest,
@@ -10,33 +11,28 @@ export default async function handler(
   }
 
   try {
+    await dbConnect();
     const { data } = req.body;
 
     if (!Array.isArray(data)) {
       return res.status(400).json({ error: 'Invalid data format' });
     }
 
-    const { db } = await connectToDatabase();
-    const collection = db.collection(process.env.MONGODB_COLLECTION_REGISTRATIONS!);
-
-    // Transform the data to match your schema
     const registrants = data.map(row => ({
       fullName: row.fullName || row['Full Name'] || '',
-      email: row.email || row.Email || null,
-      phone: row.phone || row.Phone || '',
+      email: row.email || row.Email || '',
       type: row.type || row['Type'] || '',
       clubName: row.clubName || row['Club Name'] || '',
       clubDesignation: row.clubDesignation || row['Club Designation'] || '',
-      createdAt: new Date(),
-      updatedAt: new Date()
+      registrationDate: new Date(),
+      checkedIn: false
     }));
 
-    // Insert the data
-    const result = await collection.insertMany(registrants);
+    const result = await Registrant.insertMany(registrants);
 
     return res.status(200).json({ 
       success: true, 
-      count: result.insertedCount 
+      count: result.length 
     });
 
   } catch (error) {
