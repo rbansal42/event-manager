@@ -31,14 +31,8 @@ async function dbConnect() {
 
     cached.promise = mongoose.connect(MONGODB_URI, opts);
   }
-
-  try {
-    cached.conn = await cached.promise;
-  } catch (e) {
-    cached.promise = null;
-    throw e;
-  }
-
+  
+  cached.conn = await cached.promise;
   return cached.conn;
 }
 
