@@ -5,8 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ChevronUpDown, ChevronUp, ChevronDown } from 'lucide-react';
 
 const geist = Geist({ subsets: ['latin'] });
+
+type SortField = 'fullName' | 'clubName' | 'type';
+type SortDirection = 'asc' | 'desc';
 
 type Registrant = {
   _id: string;
@@ -27,6 +32,11 @@ export default function CheckIn() {
   const [registrants, setRegistrants] = useState<Registrant[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [selectedType, setSelectedType] = useState<string>('all');
+  const [sortConfig, setSortConfig] = useState<{ field: SortField; direction: SortDirection }>({
+    field: 'fullName',
+    direction: 'asc'
+  });
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
     registrantId: string;
@@ -77,17 +87,43 @@ export default function CheckIn() {
     }
   };
 
-  const filteredRegistrants = useMemo(() => {
+  const handleSort = (field: SortField) => {
+    setSortConfig(current => ({
+      field,
+      direction: current.field === field && current.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortConfig.field !== field) return <ChevronUpDown className="h-4 w-4" />;
+    return sortConfig.direction === 'asc' ? 
+      <ChevronUp className="h-4 w-4" /> : 
+      <ChevronDown className="h-4 w-4" />;
+  };
+
+  const filteredAndSortedRegistrants = useMemo(() => {
     const searchTermLower = searchTerm.toLowerCase().trim();
-    return registrants.filter(registrant => {
-      if (!searchTermLower) return true;
-      return (
-        registrant.fullName.toLowerCase().includes(searchTermLower) ||
-        registrant.clubName.toLowerCase().includes(searchTermLower) ||
-        registrant.type.toLowerCase().includes(searchTermLower)
-      );
-    });
-  }, [registrants, searchTerm]);
+    
+    return registrants
+      .filter(registrant => {
+        const matchesSearch = !searchTermLower || 
+          registrant.fullName.toLowerCase().includes(searchTermLower) ||
+          registrant.clubName.toLowerCase().includes(searchTermLower) ||
+          registrant.type.toLowerCase().includes(searchTermLower);
+        
+        const matchesType = selectedType === 'all' || registrant.type === selectedType;
+        
+        return matchesSearch && matchesType;
+      })
+      .sort((a, b) => {
+        const direction = sortConfig.direction === 'asc' ? 1 : -1;
+        const field = sortConfig.field;
+        
+        if (a[field] < b[field]) return -1 * direction;
+        if (a[field] > b[field]) return 1 * direction;
+        return 0;
+      });
+  }, [registrants, searchTerm, selectedType, sortConfig]);
 
   if (loading) {
     return (
@@ -102,8 +138,7 @@ export default function CheckIn() {
       <Header />
       <main className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold mb-4">Check-in</h1>
+          <div className="mb-8 flex flex-col sm:flex-row gap-4">
             <Input
               type="search"
               placeholder="Search by name, club..."
@@ -111,6 +146,18 @@ export default function CheckIn() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+            <Select value={selectedType} onValueChange={setSelectedType}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="Rotarian">Rotarian</SelectItem>
+                <SelectItem value="Rotaractor">Rotaractor</SelectItem>
+                <SelectItem value="Interactor">Interactor</SelectItem>
+                <SelectItem value="Guardian">Guardian</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <Tabs defaultValue="day1">
@@ -127,15 +174,36 @@ export default function CheckIn() {
                     <table className="w-full">
                       <thead>
                         <tr className="border-b border-border">
-                          <th className="text-left p-4 font-medium">Name</th>
-                          <th className="text-left p-4 font-medium">Club</th>
-                          <th className="text-left p-4 font-medium">Type</th>
+                          <th className="text-left p-4 font-medium">
+                            <button
+                              className="flex items-center gap-1 hover:opacity-80"
+                              onClick={() => handleSort('fullName')}
+                            >
+                              Name {getSortIcon('fullName')}
+                            </button>
+                          </th>
+                          <th className="text-left p-4 font-medium">
+                            <button
+                              className="flex items-center gap-1 hover:opacity-80"
+                              onClick={() => handleSort('clubName')}
+                            >
+                              Club {getSortIcon('clubName')}
+                            </button>
+                          </th>
+                          <th className="text-left p-4 font-medium">
+                            <button
+                              className="flex items-center gap-1 hover:opacity-80"
+                              onClick={() => handleSort('type')}
+                            >
+                              Type {getSortIcon('type')}
+                            </button>
+                          </th>
                           <th className="text-left p-4 font-medium">Status</th>
                           <th className="text-left p-4 font-medium">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredRegistrants.map((registrant) => (
+                        {filteredAndSortedRegistrants.map((registrant) => (
                           <tr key={registrant._id} className="border-b border-border">
                             <td className="p-4">{registrant.fullName}</td>
                             <td className="p-4">{registrant.clubName}</td>
@@ -174,12 +242,7 @@ export default function CheckIn() {
                                 <Button
                                   variant="default"
                                   size="sm"
-                                  onClick={() => setConfirmDialog({
-                                    isOpen: true,
-                                    registrantId: registrant._id,
-                                    day,
-                                    action: 'check-in'
-                                  })}
+                                  onClick={() => handleCheckIn(registrant._id, day, 'check-in')}
                                 >
                                   Check In
                                 </Button>
@@ -201,13 +264,9 @@ export default function CheckIn() {
           >
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>
-                  {confirmDialog.action === 'check-in' ? 'Confirm Check-in' : 'Remove Check-in'}
-                </DialogTitle>
+                <DialogTitle>Remove Check-in</DialogTitle>
                 <DialogDescription>
-                  {confirmDialog.action === 'check-in'
-                    ? 'Are you sure you want to check in this registrant?'
-                    : 'Are you sure you want to remove the check-in for this registrant?'}
+                  Are you sure you want to remove the check-in for this registrant?
                 </DialogDescription>
               </DialogHeader>
               <div className="flex justify-end gap-4">
@@ -218,13 +277,13 @@ export default function CheckIn() {
                   Cancel
                 </Button>
                 <Button
-                  variant={confirmDialog.action === 'check-in' ? 'default' : 'destructive'}
+                  variant="destructive"
                   onClick={() => {
-                    handleCheckIn(confirmDialog.registrantId, confirmDialog.day, confirmDialog.action);
+                    handleCheckIn(confirmDialog.registrantId, confirmDialog.day, 'remove');
                     setConfirmDialog(prev => ({ ...prev, isOpen: false }));
                   }}
                 >
-                  {confirmDialog.action === 'check-in' ? 'Check In' : 'Remove'}
+                  Remove
                 </Button>
               </div>
             </DialogContent>

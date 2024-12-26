@@ -19,14 +19,6 @@ const registrantSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  checkedIn: {
-    type: Boolean,
-    default: false,
-  },
-  checkInTime: {
-    type: Date,
-  },
-  // Add daily check-in tracking
   dailyCheckIns: {
     day1: {
       checkedIn: { type: Boolean, default: false },

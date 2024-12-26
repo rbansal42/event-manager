@@ -13,8 +13,6 @@ interface RegistrantDocument extends Document {
   phone: string;
   type: string;
   clubName: string;
-  checkedIn: boolean;
-  checkInTime?: Date;
   dailyCheckIns: {
     day1: DailyCheckIn;
     day2: DailyCheckIn;
@@ -27,9 +25,7 @@ interface LeanRegistrant {
   fullName: string;
   phone: string;
   type: string;
-  clubName: string;
-  checkedIn: boolean;
-  checkInTime?: Date;
+  clubName: string; 
   dailyCheckIns: {
     day1: DailyCheckIn;
     day2: DailyCheckIn;
@@ -113,8 +109,6 @@ export default async function handler(
       phone: doc.phone,
       type: doc.type,
       clubName: doc.clubName,
-      checkedIn: doc.checkedIn,
-      checkInTime: doc.checkInTime,
       dailyCheckIns: doc.dailyCheckIns,
     };
 
