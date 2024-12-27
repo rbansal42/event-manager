@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronsUpDown, ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronsUpDown, ChevronUp, ChevronDown, UserPlus } from 'lucide-react';
+import NewRegistrantDialog from '@/components/NewRegistrantDialog';
 
 const geist = Geist({ subsets: ['latin'] });
 
@@ -47,6 +48,7 @@ export default function CheckIn() {
     day: '',
     action: 'check-in'
   });
+  const [showNewRegistrantDialog, setShowNewRegistrantDialog] = useState(false);
 
   useEffect(() => {
     fetchRegistrants();
@@ -137,25 +139,34 @@ export default function CheckIn() {
       <main className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-8 flex flex-col sm:flex-row gap-4">
-            <Input
-              type="search"
-              placeholder="Search by name, club..."
-              className="max-w-md"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <Select value={selectedType} onValueChange={setSelectedType}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="Rotarian">Rotarian</SelectItem>
-                <SelectItem value="Rotaractor">Rotaractor</SelectItem>
-                <SelectItem value="Interactor">Interactor</SelectItem>
-                <SelectItem value="Guardian">Guardian</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex-1 flex flex-col sm:flex-row gap-4">
+              <Input
+                type="search"
+                placeholder="Search by name, club..."
+                className="max-w-md"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <Select value={selectedType} onValueChange={setSelectedType}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="Rotarian">Rotarian</SelectItem>
+                  <SelectItem value="Rotaractor">Rotaractor</SelectItem>
+                  <SelectItem value="Interactor">Interactor</SelectItem>
+                  <SelectItem value="Guardian">Guardian</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              onClick={() => setShowNewRegistrantDialog(true)}
+              className="sm:w-auto w-full"
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              Add New Registrant
+            </Button>
           </div>
 
           <Tabs defaultValue="day1">
@@ -286,6 +297,12 @@ export default function CheckIn() {
               </div>
             </DialogContent>
           </Dialog>
+
+          <NewRegistrantDialog
+            isOpen={showNewRegistrantDialog}
+            onClose={() => setShowNewRegistrantDialog(false)}
+            onSuccess={fetchRegistrants}
+          />
         </div>
       </main>
     </div>
